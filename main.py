@@ -1,15 +1,26 @@
 from docxtpl import DocxTemplate
 from dotenv import load_dotenv
+from docx2pdf import convert
+
 import os
 
 load_dotenv()
 
-def generate_doc(company_name: str, position_name: str, temlate_path: str, output_path: str | None) -> bool:
+
+def generate_doc(company_name: str, position_name: str, template_path: str, output_path: str | None) -> bool:
     try:
-        doc = DocxTemplate(temlate_path)
+        doc = DocxTemplate(template_path)
         context = { 'company_name' : company_name, 'position_name': position_name}
         doc.render(context)
-        doc.save(f"{company_name.replace(' ', '_').lower()}-{position_name.replace(' ', '_').lower()}-cover-letter.docx")
+        docx_filename = f"{company_name.replace(' ', '_').lower()}-{position_name.replace(' ', '_').lower()}-cover-letter.docx"
+        doc.save(docx_filename)
+        
+        pdf_filename = docx_filename.replace('.docx', '.pdf')
+        convert(docx_filename, pdf_filename)
+        
+        if output_path:
+            os.rename(docx_filename, os.path.join(output_path, docx_filename))
+            os.rename(pdf_filename, os.path.join(output_path, pdf_filename))
     except Exception as e:
         print(f"Error: {e}")
         return False
@@ -42,7 +53,7 @@ def main():
         coverValid = generate_doc(company_name, position_name, templates[template_index-1]["path"], os.getenv("output_dir_path"))
     else:
         coverValid = generate_doc(company_name, position_name, templates[template_index-1]["path"])
-        
+
     if coverValid:
         print("Cover letter generated successfully")
     else:
