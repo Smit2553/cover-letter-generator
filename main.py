@@ -4,24 +4,45 @@ import os
 
 load_dotenv()
 
-def generate_doc(company_name: str, position_name: str, job_type: str):
+def generate_doc(company_name: str, position_name: str, temlate_path: str, output_path: str | None) -> bool:
     try:
-        doc = DocxTemplate(os.getenv("tempelate_path"))
+        doc = DocxTemplate(temlate_path)
         context = { 'company_name' : company_name, 'position_name': position_name}
         doc.render(context)
-        doc.save("generated_doc.docx")
+        doc.save(f"{company_name.replace(' ', '_').lower()}-{position_name.replace(' ', '_').lower()}-cover-letter.docx")
     except Exception as e:
         print(f"Error: {e}")
         return False
     return True
+
+def get_templates() -> list:
+    templates = []
+    path = os.getenv("tempelate_dir_path")
+    for file in os.listdir(path):
+        if file.endswith(".docx") and not file.startswith("~$"):
+            templates.append({
+                "name": file,
+                "path": os.path.join(path, file)
+            })
+    return templates
+    
 
 
 def main():
     print("Welcome to the Cover Letter Generator")
     company_name = input("Enter the company name: ")
     position_name = input("Enter the position you are applying for: ")
-    job_type = input("Enter the job type: ")
-    coverValid = generate_doc(company_name, position_name, job_type)
+    templates = get_templates()
+    print("Select a template from the list below")
+    for template in templates:
+        print(f"{templates.index(template)+1}. {template['name']}")
+    template_index = int(input("Enter the index of the template you want to use: "))
+
+    if os.getenv("output_dir_path") is not None:
+        coverValid = generate_doc(company_name, position_name, templates[template_index-1]["path"], os.getenv("output_dir_path"))
+    else:
+        coverValid = generate_doc(company_name, position_name, templates[template_index-1]["path"])
+        
     if coverValid:
         print("Cover letter generated successfully")
     else:
@@ -29,4 +50,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    
